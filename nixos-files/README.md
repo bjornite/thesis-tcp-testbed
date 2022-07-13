@@ -1,54 +1,36 @@
-# thesis-tcp-testbed
+# Installing NixOS for reproducible tests using Raspberry Pi 4B
 
-Router version:
+## How to get a basic NixOS install running on both raspberry Pis
 
-```
-root@OpenWrt:~# ubus call system board
-{
-	"kernel": "5.4.154",
-	"hostname": "OpenWrt",
-	"system": "MediaTek MT7621 ver:1 eco:3",
-	"model": "UniElec U7621-06 (16M flash)",
-	"board_name": "unielec,u7621-06-16m",
-	"release": {
-		"distribution": "OpenWrt",
-		"version": "21.02.1",
-		"revision": "r16325-88151b8303",
-		"target": "ramips/mt7621",
-		"description": "OpenWrt 21.02.1 r16325-88151b8303"
-	}
-}
-```
-Configure ssh to use the correct ssh key
-```
+First, build a NixOS image for the raspberry pi. Unless you have an aarch64-compatible machine readily available, this step takes some bootstrapping.
+We can use one of the Raspberry Pis as an aarch64 builder, but first we need to get NixOS running on it.
+Luckily, NixOS images for Raspberry Pi are availble online. Download the generic image linked here and follow instruction to write it to an SD card: https://nix.dev/tutorials/installing-nixos-on-a-raspberry-pi
 
-bjorn@bjorn-ThinkPad-E14:~$ sudo cat /root/.ssh/config
-[sudo] password for bjorn: 
-Host server
-	HostName 192.168.1.176
-	Port 22
-	User root
+Insert the SD card and boot up. Connect the RPi to a keyboard/mouse/monitor and configure it so you can get SSH access from your laptop.
 
-	# any other fancy option needed to log in
-	# ProxyJump foo ...
+Once one of the Raspberry Pis is running NixOS and you have SSH access, we can configure it to be a build server for NixOps. The benefits of building images ourselves is that we can pre-load the images with information about which WiFi network we want it to connect to and which SSH keys we want to give access to.
 
-	# Prevent using ssh-agent or another keyfile, useful for testing
-	IdentitiesOnly yes
-	IdentityFile /root/.ssh/nix_remote
-	
-Host client
-	HostName 192.168.1.249
-	Port 22
-	User root
+A guide on how to configure remote builders can be found here (also see the comments in sd-image.nix): https://nixos.wiki/wiki/Distributed_build
 
-	# any other fancy option needed to log in
-	# ProxyJump foo ...
+Add your SSH keys to sd-image.nix. Then build the new image with 
 
-	# Prevent using ssh-agent or another keyfile, useful for testing
-	IdentitiesOnly yes
-	IdentityFile /root/.ssh/nix_remote
+`
+nixos-generate -f sd-aarch64-installer --system aarch64-linux -c sd-image.nix
+`
+
+Once the image is built, flash it to each of the SD cards and plug them in.
+Find the IPs of each machine and use these to configure the default.nix file.
+
+We can now use NixOps to configure all of the machines at once.
+Run:
 
 ```
+nixops create default.nix
+nixops list
+nixops deploy
+nixops info
+```
+
 If you have more than one nixops deployment, select the right one by setting the environment variable
 ```
 bjorn@bjorn-ThinkPad-E14:~$ nixops list
@@ -67,26 +49,7 @@ Finally, build and deploy:
 bjorn@bjorn-ThinkPad-E14:~$ nixops deploy
 ```
 
-## Commands for configuring experiments
+I once found that the build failed when using the default release for nixos. The solution was to try another release.
+This command can be used to configure a specific nixos release before running nixops build:
 
-Setting congestion control algorithm
-
-```
-[root@client:~]# cat /proc/sys/net/ipv4/tcp_available_congestion_control
-reno cubic bbr highspeed hybla illinois nv scalable westwood vegas yeah
-[root@client:~]# sysctl -w net.ipv4.tcp_congestion_control=bbr
-net.ipv4.tcp_congestion_control = bbr
-```
-
-Setting ECN configuration
-```
-[root@server:~]# sysctl  net.ipv4.tcp_ecn
-net.ipv4.tcp_ecn = 3
-```
-
-The scripts *setup_tc.sh* and *configure_netem.sh* must be executed on the server before the experiments are started.
-These set up a netem qdisc on the ingress of eth0 on the server. The experiment configuration will look something like this:
-
-Client --(netem delay and rate limit)--> Server --> Client
-
-Finally, the script *run_experiments.sh* will start the flent session on the client and also takes care of configuring netem on the server to reduce the rate at the right time.
+`export NIX_PATH=nixpkgs=https://releases.nixos.org/nixos/21.11/nixos-21.11.336020.2128d0aa28e/nixexprs.tar.xz`
