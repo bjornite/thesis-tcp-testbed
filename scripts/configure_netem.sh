@@ -11,4 +11,4 @@ done
 tc qdisc add dev ifb0 handle 1: root htb default 11
 tc class add dev ifb0 parent 1: classid 1:1 htb rate ${RATE_MBIT}mbit ceil ${RATE_MBIT}mbit
 tc class add dev ifb0 parent 1:1 classid 1:11 htb rate ${RATE_MBIT}mbit ceil ${RATE_MBIT}mbit
-tc qdisc add dev ifb0 parent 1:11 fq_codel ecn
+tc qdisc add dev ifb0 parent 1:11 codel ecn
