@@ -1,6 +1,8 @@
 # Analyzing a Theoretically Optimal Capacity-Seeking Congestion Controller
 
-This document explains how to run the experiments described in our paper "Analyzing a Theoretically Optimal Capacity-Seeking Congestion Controller".
+This document explains how to run the experiments described in our paper "Analyzing a Theoretically Optimal Capacity-Seeking Congestion Controller". 
+
+Link to the paper: https://arxiv.org/abs/2111.00488
 
 ## Setting up the testbed
 
