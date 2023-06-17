@@ -1,6 +1,6 @@
-# Analyzing a Theoretically Optimal Capacity-Seeking Congestion Controller
+# A Lower Bound on Latency Spikes for Capacity-Seeking Network Traffic
 
-This document explains how to run the experiments described in our paper "Analyzing a Theoretically Optimal Capacity-Seeking Congestion Controller". 
+This document explains how to run the experiments described in our paper "A Lower Bound on Latency Spikes for Capacity-Seeking Network Traffic". 
 
 Link to the paper: https://arxiv.org/abs/2111.00488
 
